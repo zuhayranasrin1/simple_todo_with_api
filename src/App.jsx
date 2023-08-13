@@ -1,30 +1,37 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import './App.css'
 import 'bootstrap/dist/css/bootstrap.min.css';
 import FormModal from './components/FormModal'
+import { createClient } from '@supabase/supabase-js'
 
-const initialTodos = [
-  { id: 1, text: 'Learn VSCode', completed: true, points: 2, user: {id: 1, name: 'Abu'} },
-  { id: 2, text: 'Learn Css', completed: true, points: 5, user: {id: 2, name: 'Ali'} },
-  { id: 3, text: 'Learn HTML', completed: true, points: 7, user: {id: 1, name: 'Abu'} },
-  { id: 4, text: 'Learn Bootstrap', completed: true, points: 2, user: {id: 2, name: 'Ali'} },
-  { id: 5, text: 'Learn Git', completed: true, points: 10, user: {id: 1, name: 'Abu'} },
-  { id: 6, text: 'Learn Databse', completed: true, points: 1, user: {id: 1, name: 'Abu'} },
-  { id: 7, text: 'Learn Tailwind', completed: true, points: 3, user: {id: 2, name: 'Ali'} },
-  { id: 8, text: 'Learn SQL', completed: true, points: 6, user: {id: 1, name: 'Abu'} },
-]
+const supabaseUrl = 'https://tgtmyfnuotpbqwwtkeer.supabase.co'
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRndG15Zm51b3RwYnF3d3RrZWVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE2OTE3MTg0MDcsImV4cCI6MjAwNzI5NDQwN30.t75LmWdWJw3W8igvrVR5T_r7M3y0MEtUPuyvTPeXxeo'
+const supabase = createClient(supabaseUrl, supabaseKey)
+
+
 
 const defaultTodo = {
-  id: '',
   text: '',
   points: '',
-  user: ''
 }
 
 function App() {
-  const [todos, setTodos] = useState(initialTodos)
+  const [todos, setTodos] = useState([])
   const [todoEdit, setTodoEdit] = useState(defaultTodo)
   const [showModal, setShowModal] = useState(false)
+
+  const fetchTodos = async () => {
+    
+  let { data, error } = await supabase
+    .from('todos')
+    .select('*')
+    console.log(data);
+    setTodos([...data])
+  }
+
+  useEffect(() => {
+   fetchTodos() 
+  },[])
 
   const handleToggleCompleted = (id) => {
     const newTodos = todos.map((todo) => {
@@ -36,18 +43,38 @@ function App() {
     setTodos(newTodos)
   }
 
-  const onSubmitForm = (newTodo) => {
+  const onSubmitForm = async (newTodo) => {
     if(newTodo.id){
-      const newTodos = todos.map((todo) => {
-        if(todo.id === newTodo.id){
-          return newTodo
-        }
-        return todo
-      })
-      setTodos(newTodos)
+      //update
+    const { data, error } = await supabase
+      .from('todos')
+      .update(newTodo)
+      .eq('id', newTodo.id) //kita nak update row yg id dia matching newTodo.id
+      .select()
+      console.log(data);
+
+      // local data (browser)
+      // const newTodos = todos.map((todo) => {
+      //   if(todo.id === newTodo.id){
+      //     return data[0]
+      //   }
+      //   return todo
+      // })
+      // setTodos(newTodos)
+
+      fetchTodos()
     }else{
-      const newTodos = [...todos, {...newTodo, id: todos.length + 1}]
-      setTodos(newTodos)
+      //create
+      // const newTodos = [...todos, {...newTodo, id: todos.length + 1}]
+      // setTodos(newTodos)
+        debugger
+      const { data, error } = await supabase
+        .from('todos')
+        //array of object which contain column & value yang kita nak
+        .insert([newTodo])
+        .select()
+        
+        console.log(data);
     }
   }
 
